@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
@@ -42,7 +43,10 @@ class RoIAlignFunction(Function):
         ctx.aligned = aligned
         ctx.input_shape = input.size()
 
-        assert rois.size(1) == 5, 'RoI must be (idx, x1, y1, x2, y2)!'
+        assert rois.size(1) in [4, 5], 'RoI must be ([idx,] x1, y1, x2, y2)!'
+        if rois.size(1) == 4:
+            fake_idx = torch.arange(rois.size(0)).reshape([-1, 1]).to(rois)
+            rois = torch.cat([fake_idx, rois], dim=1).contiguous()
 
         output_shape = (rois.size(0), input.size(1), ctx.output_size[0],
                         ctx.output_size[1])
